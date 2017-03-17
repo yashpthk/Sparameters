@@ -618,7 +618,7 @@ namespace CapacitanceExtractorApp.ViewModel
                     break;
             }
 
-            string path = Environment.CurrentDirectory;
+            string path = MeasurementPath;
 #if DEBUG
             path = path + @"\Data";
 #endif
