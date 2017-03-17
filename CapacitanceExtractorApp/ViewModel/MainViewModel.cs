@@ -534,6 +534,7 @@ namespace CapacitanceExtractorApp.ViewModel
             IsBusy = true;
             worker.RunWorkerAsync();
 
+
         }
 
         public void OnOutputListSelectionChangedCommand()
