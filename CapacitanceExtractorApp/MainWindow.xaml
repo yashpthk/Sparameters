@@ -273,7 +273,7 @@
                             <xctk:MagnifierManager.Magnifier>
                                 <xctk:Magnifier Radius="150" ZoomFactor=".3" ></xctk:Magnifier>
                             </xctk:MagnifierManager.Magnifier>
-                            <Image Source="{Binding OutputImageSource}" Stretch="Fill"/>
+                            <Image Source="{Binding OutputImageSource}" Stretch="Fill" />
                         </Button>
                         <Border BorderBrush="Black" BorderThickness="1" Height="350" Width="1"/>
                         <Grid>

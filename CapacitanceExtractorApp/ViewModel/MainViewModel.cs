@@ -54,17 +54,6 @@ namespace CapacitanceExtractorApp.ViewModel
                         OnExtractCommand));
             }
         }
-
-        private RelayCommand outputListSelectionChangedCommand;
-        public RelayCommand OutputListSelectionChangedCommand
-        {
-            get
-            {
-                return outputListSelectionChangedCommand
-                  ?? (outputListSelectionChangedCommand = new RelayCommand(
-                        OnOutputListSelectionChangedCommand));
-            }
-        }
         private RelayCommand toggleOutputImageCommand;
         public RelayCommand ToggleOutputImageCommand
         {
@@ -395,8 +384,8 @@ namespace CapacitanceExtractorApp.ViewModel
             set
             {
                 Set(ref selectedOutputIndex, value);
-                if(OutputList.Count!=0)
-                OutputImageSource = Environment.CurrentDirectory + @"\Output\" + OutputList[SelectedOutputIndex] + ".png";
+                if (OutputList.Count != 0)
+                    OnOutputListSelectionChangedCommand();
             }
         }
         public string OutputImageSource
@@ -405,6 +394,7 @@ namespace CapacitanceExtractorApp.ViewModel
             set
             {
                 Set(ref outputImageSource, value);
+                RaisePropertyChanged("OutputImageSource");
             }
         }
         public string ImageButtonText
@@ -452,6 +442,7 @@ namespace CapacitanceExtractorApp.ViewModel
                 Set(ref outputList, value);
                 IsOutputListVisible = false;
                 IsOutputListVisible = true;
+                RaisePropertyChanged("OutputList");
             }
         }
 
@@ -500,7 +491,6 @@ namespace CapacitanceExtractorApp.ViewModel
                 {
                     lock (_lock)
                     {
-                        OutputList = new List<string>();
                         if (freq != 0)
                         {
                             #region B1505 Interpolation
@@ -510,12 +500,12 @@ namespace CapacitanceExtractorApp.ViewModel
                                 cValues_B1505 = B1505Data.getB1505InterpolatedData();
                             }
                             #endregion
-                            OutputList = new List<string>();
-                            if (outputListBackup.Count != 0)
+                            if (tableCount == 0)
                             {
-                                OutputList.AddRange(outputListBackup);
+                                OutputList.Clear();
+                                OutputList = new List<string>();
                             }
-
+                            outputListBackup.Clear();
                             inProgress = true;
                             count = 0;
                             tableCount++;
@@ -528,12 +518,16 @@ namespace CapacitanceExtractorApp.ViewModel
                             inProgress = false;
                             AddStatusMessage("Finished!");
                             generateChartsAndPlots(ds.Tables[tableCount.ToString()], "Vds", "Cgd", dynamicFileName);
-                            outputListBackup.Clear();
-                            outputListBackup = OutputList;
                             FileID = (Convert.ToInt64(FileID.TrimEnd(' ')) + 1) > 9999 ? "0001" :
                             (Convert.ToInt64(FileID.TrimEnd(' ')) + 1).ToString();
-
-                            System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = outputListBackup));
+                            //foreach (string fileName in outputListBackup)
+                            //    OutputList.Add(fileName);
+                            //System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
+                            System.Windows.Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send,new Action(() =>
+                            {
+                                OutputList = OutputList;
+                                // Do something here.
+                            }));
                         }
                     }
                 };
@@ -543,10 +537,15 @@ namespace CapacitanceExtractorApp.ViewModel
                         IsBusy = false;
                         lock (_lock)
                         {
-                            OutputList = new List<string>();
-                            OutputList.AddRange(outputListBackup);
+                            System.Windows.Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send,
+                            new Action(() =>
+                            {
+                                OutputList = OutputList;
+                                // Do something here.
+                            }));
                         }
                         IsOutputEnabled = true;
+                        SelectedOutputIndex = 0;
                     };
                 //set the IsBusy before you start the thread
                 IsBusy = true;
@@ -562,8 +561,7 @@ namespace CapacitanceExtractorApp.ViewModel
 
         public void OnOutputListSelectionChangedCommand()
         {
-            OutputImageSource = Environment.CurrentDirectory + @"\Output\" + OutputList[SelectedOutputIndex];
-
+            OutputImageSource = Environment.CurrentDirectory + @"\Output\" + OutputList[SelectedOutputIndex] + ".png";
         }
 
         public void OnToggleOutputImageCommand()
@@ -1343,10 +1341,10 @@ namespace CapacitanceExtractorApp.ViewModel
             ca4.AxisY.MinorGrid.LineWidth = 1;
             ca4.AxisY.MinorGrid.Interval = 1;
             #endregion
-            SelectedOutputIndex = 0;
             string imageName = IsPrefix ? (FileID + "_Combined_Capacitances_" + fileName + "MHz") :
                 ("Combined_Capacitances_" + fileName + "MHz_" + FileID);
             OutputList.Add(imageName);
+            System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
             string path = Environment.CurrentDirectory + @"\Output\";
             //databind...
             chartCombined.DataBind();
@@ -1369,6 +1367,7 @@ namespace CapacitanceExtractorApp.ViewModel
             imageName = IsPrefix ? (FileID + "_Cgd_Cgs_Cds_" + fileName + "MHz") :
                  ("Cgd_Cgs_Cds_" + fileName + "MHz_" + FileID);
             OutputList.Add(imageName);
+            System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
             chartParasitic.SaveImage(path + imageName + ".png", ChartImageFormat.Png);
 
             Chart chartIntrinsic = new Chart();
@@ -1387,6 +1386,7 @@ namespace CapacitanceExtractorApp.ViewModel
             imageName = IsPrefix ? (FileID + "_Crss_Ciss_Coss_" + fileName + "MHz") :
                  ("Crss_Ciss_Coss_" + fileName + "MHz_" + FileID);
             OutputList.Add(imageName);
+            System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
             chartIntrinsic.SaveImage(path + imageName + ".png", ChartImageFormat.Png);
 
             if (IsRefData)
@@ -1404,6 +1404,7 @@ namespace CapacitanceExtractorApp.ViewModel
                 imageName = IsPrefix ? (FileID + "_Error_Par" + fileName + "MHz") :
                      ("Error_Par_" + fileName + "MHz_" + FileID);
                 OutputList.Add(imageName);
+                System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
                 chartErrorParasitic.SaveImage(path + imageName + ".png", ChartImageFormat.Png);
 
                 Chart chartErrorIntrinsitic = new Chart();
@@ -1419,6 +1420,7 @@ namespace CapacitanceExtractorApp.ViewModel
                 imageName = IsPrefix ? (FileID + "_Error_Int" + fileName + "MHz") :
                      ("Error_Int_" + fileName + "MHz_" + FileID);
                 OutputList.Add(imageName);
+                System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
                 chartErrorIntrinsitic.SaveImage(path + imageName + ".png", ChartImageFormat.Png); 
             }
         }
@@ -1471,6 +1473,7 @@ namespace CapacitanceExtractorApp.ViewModel
             string imageName = IsPrefix ? (FileID + "_Combined_Error_Par") :
                  ("Combined_Error_Par_" + FileID);
             OutputList.Add(imageName);
+            System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
             string path = Environment.CurrentDirectory + @"\Output\";
             errorGraph.SaveImage(path + imageName + ".png", ChartImageFormat.Png);
 
@@ -1514,6 +1517,7 @@ namespace CapacitanceExtractorApp.ViewModel
             imageName = IsPrefix ? (FileID + "_Combined_Error_Int") :
                  ("Combined_Error_Int_" + FileID);
             OutputList.Add(imageName);
+            System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = OutputList));
             path = Environment.CurrentDirectory + @"\Output\";
             errorGraph.SaveImage(path + imageName + ".png", ChartImageFormat.Png);
             errorGraph.SaveImage(Environment.CurrentDirectory + @"\Output\Combined_Error_Int.png", ChartImageFormat.Png);
@@ -1685,24 +1689,35 @@ namespace CapacitanceExtractorApp.ViewModel
                 MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
-                IsAutoMode = true;
-                freq = 20000000;
-                freq2 = 20000000;
-                freqString = "20000000";
-                freq2String = "20000000";
-                IsCurrentLocation = true;
-                FileID = "001";
-                IsNotRefData = true;
-                StatusMessages = String.Empty;
-                VdsRangeMax = "60";
-                IsSuffix = true;
-                MeasurementPath = Environment.CurrentDirectory;
-                IsOutputEnabled = false;
-                OutputList.Clear();
-                OutputList = new List<string>();
-                OutputImageSource = String.Empty;
-                outputListBackup.Clear();
-                outputListBackup = new List<string>();
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += (o, ea) =>
+                {
+                    IsAutoMode = true;
+                    freq = 20000000;
+                    freq2 = 20000000;
+                    freqString = "20000000";
+                    freq2String = "20000000";
+                    IsCurrentLocation = true;
+                    FileID = "001";
+                    IsNotRefData = true;
+                    StatusMessages = String.Empty;
+                    VdsRangeMax = "60";
+                    IsSuffix = true;
+                    MeasurementPath = Environment.CurrentDirectory;
+                    IsOutputEnabled = false;
+                    OutputList.Clear();
+                    OutputList = new List<string>();
+                    OutputImageSource = string.Empty;
+                    outputListBackup.Clear();
+                    outputListBackup = new List<string>();
+                };
+                worker.RunWorkerCompleted += (o, ea) =>
+                {
+                    IsBusy = false;
+                    StatusMessages = "Welcome to the S-Parameter Capacitance Extractor.";
+                };
+                IsBusy = true;
+                worker.RunWorkerAsync();
             }
         }
     }
