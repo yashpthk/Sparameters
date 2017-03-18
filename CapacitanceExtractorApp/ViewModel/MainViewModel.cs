@@ -136,6 +136,7 @@ namespace CapacitanceExtractorApp.ViewModel
         private bool isOutputListVisible = true;
         private bool isBusy = false;
         private bool isOutputEnabled =false;
+        private bool isErrorOpen = false;
         private long freq = 20000000;
         private long freq2 = 20000000;
         private string freqString = "20000000";
@@ -356,13 +357,25 @@ namespace CapacitanceExtractorApp.ViewModel
                 RaisePropertyChanged("IsOutputEnabled");
             }
         }
+        public bool IsErrorOpen
+        {
+            get { return isErrorOpen; }
+            set
+            {
+                Set(ref isErrorOpen, value);
+                RaisePropertyChanged("IsErrorOpen");
+            }
+        }
+
         public string FreqString
         {
             get { return freqString; }
             set
             {
                 Set(ref freqString, value);
-                freq = Convert.ToInt64(FreqString.Trim('_'));
+                freq = FreqString.ElementAt(0).Equals('_') ?
+                    20000000 :
+                    Convert.ToInt64(FreqString.Trim('_'));
             }
         }
         public string Freq2String
@@ -371,7 +384,9 @@ namespace CapacitanceExtractorApp.ViewModel
             set
             {
                 Set(ref freq2String, value);
-                freq2 = Convert.ToInt64(Freq2String.Trim('_'));
+                freq2 = Freq2String.ElementAt(0).Equals('_') ?
+                    20000000 :
+                    Convert.ToInt64(FreqString.Trim('_'));
             }
         }
         public int SelectedOutputIndex
@@ -406,7 +421,7 @@ namespace CapacitanceExtractorApp.ViewModel
             set
             {
                 Set(ref vdsRangeMax, value);
-                VdsMax = Convert.ToInt32(VdsRangeMax.Trim(' '));
+                VdsMax = Convert.ToInt32(VdsRangeMax.Trim('_'));
             }
         }
         public string Notes
@@ -464,6 +479,7 @@ namespace CapacitanceExtractorApp.ViewModel
             //Enable the cross acces to this collection elsewhere
             BindingOperations.EnableCollectionSynchronization(OutputList, _lock);
             Directory.CreateDirectory(MeasurementPath + @"\Output");
+            StatusMessages = "Welcome to the S-Parameter Capacitance Extractor.";
         }
 
         public void OnSelectMeasurementDataCommand()
@@ -475,66 +491,73 @@ namespace CapacitanceExtractorApp.ViewModel
 
         public void OnExtractCommand()
         {
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += (o, ea) =>
+            AddStatusMessage("Now generating for fileID: " + FileID);
+            bool canExecute = checkForAllFilesExist();
+            if (canExecute)
             {
-                lock (_lock)
+                BackgroundWorker worker = new BackgroundWorker();
+                worker.DoWork += (o, ea) =>
                 {
-                    OutputList = new List<string>();
-                    if (freq != 0)
-                    {
-                        #region B1505 Interpolation
-                        if (IsRefData)
-                        {
-                            iB1505 B1505Data = new B1505();
-                            cValues_B1505 = B1505Data.getB1505InterpolatedData();
-                        }
-                        #endregion
-                        OutputList = new List<string>();
-                        if (outputListBackup.Count != 0)
-                        {
-                            OutputList.AddRange(outputListBackup);
-                        }
-
-                        inProgress = true;
-                        count = 0;
-                        tableCount++;
-                        dynamicFileName = (freq / 1000000).ToString();
-                        BuildCapacitanceTable(ref ds, tableCount, freq, freq2, String.Empty, isComparisionMode);
-                        freqPoints[tableCount] = FileID + "_" + dynamicFileName + "MHz";
-                        #region Add B1505 data and generate output file and Graphs
-                        count = build1505DataAndGenerateOutputFile(count, tableCount, ds, dynamicFileName, cValues_B1505);
-                        #endregion
-                        inProgress = false;
-                        AddStatusMessage("Finished!");
-
-                        StatusMessages = StatusMessages + "\nExcel!";
-                        generateChartsAndPlots(ds.Tables[tableCount.ToString()], "Vds", "Cgd", dynamicFileName);
-                        outputListBackup.Clear();
-                        outputListBackup = OutputList;
-                        FileID = (Convert.ToInt64(FileID.TrimEnd(' ')) + 1) > 9999 ? "0001" :
-                        (Convert.ToInt64(FileID.TrimEnd(' ')) + 1).ToString();
-
-                        System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = outputListBackup));
-                    }
-                }
-            };
-            worker.RunWorkerCompleted += (o, ea) =>
-                {
-                //work has completed. you can now interact with the UI
-                IsBusy = false;
                     lock (_lock)
                     {
                         OutputList = new List<string>();
-                        OutputList.AddRange(outputListBackup);
+                        if (freq != 0)
+                        {
+                            #region B1505 Interpolation
+                            if (IsRefData)
+                            {
+                                iB1505 B1505Data = new B1505();
+                                cValues_B1505 = B1505Data.getB1505InterpolatedData();
+                            }
+                            #endregion
+                            OutputList = new List<string>();
+                            if (outputListBackup.Count != 0)
+                            {
+                                OutputList.AddRange(outputListBackup);
+                            }
+
+                            inProgress = true;
+                            count = 0;
+                            tableCount++;
+                            dynamicFileName = (freq / 1000000).ToString();
+                            BuildCapacitanceTable(ref ds, tableCount, freq, freq2, String.Empty, isComparisionMode);
+                            freqPoints[tableCount] = FileID + "_" + dynamicFileName + "MHz";
+                            #region Add B1505 data and generate output file and Graphs
+                            count = build1505DataAndGenerateOutputFile(count, tableCount, ds, dynamicFileName, cValues_B1505);
+                            #endregion
+                            inProgress = false;
+                            AddStatusMessage("Finished!");
+                            generateChartsAndPlots(ds.Tables[tableCount.ToString()], "Vds", "Cgd", dynamicFileName);
+                            outputListBackup.Clear();
+                            outputListBackup = OutputList;
+                            FileID = (Convert.ToInt64(FileID.TrimEnd(' ')) + 1) > 9999 ? "0001" :
+                            (Convert.ToInt64(FileID.TrimEnd(' ')) + 1).ToString();
+
+                            System.Windows.Application.Current.Dispatcher.Invoke((Action)(() => OutputList = outputListBackup));
+                        }
                     }
-                    IsOutputEnabled = true;
                 };
-            //set the IsBusy before you start the thread
-            IsBusy = true;
-            worker.RunWorkerAsync();
-
-
+                worker.RunWorkerCompleted += (o, ea) =>
+                    {
+                        //work has completed. you can now interact with the UI
+                        IsBusy = false;
+                        lock (_lock)
+                        {
+                            OutputList = new List<string>();
+                            OutputList.AddRange(outputListBackup);
+                        }
+                        IsOutputEnabled = true;
+                    };
+                //set the IsBusy before you start the thread
+                IsBusy = true;
+                worker.RunWorkerAsync();
+            }
+            else
+            {
+                Xceed.Wpf.Toolkit.MessageBox.Show("Errors in settings. \nCheck Application Messages for Details", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                IsErrorOpen = true;
+            }
         }
 
         public void OnOutputListSelectionChangedCommand()
@@ -548,6 +571,48 @@ namespace CapacitanceExtractorApp.ViewModel
             IsOutputImageClicked = !IsOutputImageClicked;
             IsOutputImageMinimized = !IsOutputImageMinimized;
             ImageButtonText = OutputList[SelectedOutputIndex];
+        }
+
+        private bool preExecuteCheck()
+        {
+            bool canExecute = true;
+            if (!checkForAllFilesExist())
+            {
+                if (FileID == null)
+                {
+                    AddStatusMessage("File ID missing.");
+                }
+            }
+            return canExecute;
+        }
+        private bool checkForAllFilesExist()
+        {
+            bool allFileExists = false;
+            string notFoundFiles = string.Empty;
+            List<double> Vds = GetVdsProper();
+            string path = MeasurementPath;
+#if DEBUG
+            path = path + @"\Data";
+#endif
+            for (int i = 1; i <= Vds.Count; i++)
+            {
+                if (i < 10)
+                {
+                    allFileExists = File.Exists(path + @"\0V" + i.ToString() + ".S2P");
+                    if (!allFileExists)
+                        notFoundFiles = notFoundFiles + (" 0V" + i + ".S2P,");
+                }
+                else if (i > 9)
+                {
+                    allFileExists = File.Exists(path + @"\" + Vds[i - 1] + "V0.S2P");
+                    if (!allFileExists)
+                        notFoundFiles = notFoundFiles + (" 0V" + Vds[i - 1] + ".S2P,");                    
+                }
+        }
+
+            if (!allFileExists)
+                AddStatusMessage("Vds range error. (File(s):"+ notFoundFiles +" Not found)");
+            return allFileExists;
         }
 
         /// <summary>
@@ -607,28 +672,19 @@ namespace CapacitanceExtractorApp.ViewModel
         {
             ds.Tables.Add(new DataTable(tableCount.ToString()));
             int count = 0;
-            double[] VdsRange = { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60,
-            70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000};
-            List<double> Vds = new List<double>();
-            foreach (double valueVds in VdsRange)
-            {
-                if (VdsMax >= valueVds)
-                    Vds.Add(valueVds);
-                else
-                    break;
-            }
+            List<double> Vds = GetVdsProper();
 
             string path = MeasurementPath;
 #if DEBUG
             path = path + @"\Data";
 #endif
-            if (isComparisionMode)
-            {
-                path = path + @"\" + folderName;
-#if DEBUG
-                path = Environment.CurrentDirectory + @"\Data\" + folderName;
-#endif
-            }
+//            if (isComparisionMode)
+//            {
+//                path = path + @"\" + folderName;
+//#if DEBUG
+//                path = Environment.CurrentDirectory + @"\Data\" + folderName;
+//#endif
+//            }
 
             #region Build Columns
             ds.Tables[tableCount.ToString()].Columns.Add(new DataColumn("Freq"));
@@ -667,12 +723,12 @@ namespace CapacitanceExtractorApp.ViewModel
                 if (i < 10)
                     ConvertToDataTable(path + @"\0V" + i.ToString() + ".S2P", freq, ds.Tables[tableCount.ToString()]);
                 else if (i > 9 && i < 11)
-                    ConvertToDataTable(path + @"\" + Vds[i-1] + "V0.S2P", freq, ds.Tables[tableCount.ToString()]);
+                    ConvertToDataTable(path + @"\" + Vds[i - 1] + "V0.S2P", freq, ds.Tables[tableCount.ToString()]);
                 else if (i >= 11 && i < 20)
-                    ConvertToDataTable(path + @"\" + Vds[i-1] + "V0.S2P", freq2, ds.Tables[tableCount.ToString()]);
+                    ConvertToDataTable(path + @"\" + Vds[i - 1] + "V0.S2P", freq2, ds.Tables[tableCount.ToString()]);
                 else if (i >= 20)
                 {
-                    ConvertToDataTable(path + @"\" + Vds[i-1] + "V0.S2P", freq2, ds.Tables[tableCount.ToString()]);
+                    ConvertToDataTable(path + @"\" + Vds[i - 1] + "V0.S2P", freq2, ds.Tables[tableCount.ToString()]);
                     count++;
                 }
             #endregion
@@ -714,6 +770,22 @@ namespace CapacitanceExtractorApp.ViewModel
                 //Console.WriteLine(row[0] + "\t" + row[6].ToString() + "\t" + row[11].ToString() + "\t" + Zc);
             }
             #endregion
+        }
+
+        private List<double> GetVdsProper()
+        {
+            double[] VdsRange = { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60,
+            70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000};
+            List<double> Vds = new List<double>();
+            foreach (double valueVds in VdsRange)
+            {
+                if (VdsMax >= valueVds)
+                    Vds.Add(valueVds);
+                else
+                    break;
+            }
+
+            return Vds;
         }
 
         /// <summary>
@@ -1527,7 +1599,7 @@ namespace CapacitanceExtractorApp.ViewModel
                 {
                     //Add a new worksheet to workbook with the Datatable name
                     Excel.Worksheet excelWorkSheet = excelWorkBook.Sheets.Add();
-                    excelWorkSheet.Name = freqPoints[tableCount];
+                    excelWorkSheet.Name = freqPoints[tableCount] + tableCount;
                     excelWorkSheet.Cells[1, 1] = "Generated By S-Parameter Transistor Capacitance Extractor, "
                         + "Authors - Yash Pathak, Cristino Salcines, Date;Time " + DateTime.Now.ToString("yyyy/MM/dd;HH:mm:ss");
                     excelWorkSheet.Cells[2, 1] = "User Notes: ";
