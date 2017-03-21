@@ -1707,7 +1707,7 @@ namespace CapacitanceExtractorApp.ViewModel
                     IsOutputEnabled = false;
                     OutputList.Clear();
                     OutputList = new List<string>();
-                    OutputImageSource = string.Empty;
+                    OutputImageSource = "pack://application:,,,/CapacitanceExtractorApp;component/Resources/blank.png";
                     outputListBackup.Clear();
                     outputListBackup = new List<string>();
                 };

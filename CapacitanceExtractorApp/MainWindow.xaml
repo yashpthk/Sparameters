@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ignore="http://www.galasoft.ch/ignore"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:local="clr-namespace:CapacitanceExtractorApp"
         mc:Ignorable="d ignore"
         WindowStyle="ThreeDBorderWindow"
         Height="720"
@@ -16,7 +17,8 @@
     <Window.Resources>
         <ResourceDictionary>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
-            <ResourceDictionary.MergedDictionaries>
+            <local:ImageConverter x:Key="ImageConverter" />
+                <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Skins/MainSkin.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -46,7 +48,7 @@
                    TextWrapping="Wrap"/>
                         </DockPanel>
                     </Button>
-                    <Image Source="{Binding OutputImageSource}" Stretch="Fill" Grid.Row="1"/>
+                    <Image Source="{Binding Path=OutputImageSource, Converter={StaticResource ImageConverter}}" Stretch="Fill" Grid.Row="1"/>
                 </Grid>
 
                 <Grid x:Name="LayoutRoot" DockPanel.Dock="Top"                  
@@ -273,7 +275,7 @@
                             <xctk:MagnifierManager.Magnifier>
                                 <xctk:Magnifier Radius="150" ZoomFactor=".3" ></xctk:Magnifier>
                             </xctk:MagnifierManager.Magnifier>
-                            <Image Source="{Binding OutputImageSource}" Stretch="Fill" />
+                            <Image Source="{Binding Path=OutputImageSource, Converter={StaticResource ImageConverter}}" Stretch="Fill" />
                         </Button>
                         <Border BorderBrush="Black" BorderThickness="1" Height="350" Width="1"/>
                         <Grid>
