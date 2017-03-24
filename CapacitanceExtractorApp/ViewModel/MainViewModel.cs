@@ -84,6 +84,49 @@ namespace CapacitanceExtractorApp.ViewModel
                         clearAll));
             }
         }
+
+        private RelayCommand selectLeftFixtureFileCommand;
+        public RelayCommand SelectLeftFixtureFileCommand
+        {
+            get
+            {
+                return selectLeftFixtureFileCommand
+                  ?? (selectLeftFixtureFileCommand = new RelayCommand(
+                        onSelectLeftFixtureFileCommand));
+            }
+        }
+        private RelayCommand selectRightFixtureFileCommand;
+        public RelayCommand SelectRightFixtureFileCommand
+        {
+            get
+            {
+                return selectRightFixtureFileCommand
+                  ?? (selectRightFixtureFileCommand = new RelayCommand(
+                        onSelectRightFixtureFileCommand));
+            }
+        }
+        private RelayCommand selectDUTFixtureFileCommand;
+        public RelayCommand SelectDUTFixtureFileCommand
+        {
+            get
+            {
+                return selectDUTFixtureFileCommand
+                  ?? (selectDUTFixtureFileCommand = new RelayCommand(
+                        onSelectDUTFixtureFileCommand));
+            }
+        }
+        private RelayCommand startDeEmbedCommand;
+        public RelayCommand StartDeEmbedCommand
+        {
+            get
+            {
+                return startDeEmbedCommand
+                  ?? (startDeEmbedCommand = new RelayCommand(
+                        startDeEmbed));
+            }
+        }
+
+
         //private RelayCommand selectReferenceDataCommand;
         //public RelayCommand SelectReferenceDataCommand
         //{
@@ -126,6 +169,7 @@ namespace CapacitanceExtractorApp.ViewModel
         private bool isBusy = false;
         private bool isOutputEnabled =false;
         private bool isErrorOpen = false;
+        private bool isDeEmbedEnabled = false;
         private long freq = 20000000;
         private long freq2 = 20000000;
         private string freqString = "20000000";
@@ -138,6 +182,9 @@ namespace CapacitanceExtractorApp.ViewModel
         private string busyContent = "Please Wait...";
         private List<string> outputList;
         private List<string> outputListBackup;
+        private string rightFixtureFilePath = string.Empty;
+        private string dUTFilePath = string.Empty;
+        private string leftFixtureFilePath = string.Empty;
 
 
 
@@ -355,6 +402,16 @@ namespace CapacitanceExtractorApp.ViewModel
                 RaisePropertyChanged("IsErrorOpen");
             }
         }
+        public bool IsDeEmbedEnabled
+        {
+            get { return isDeEmbedEnabled; }
+            set
+            {
+                Set(ref isDeEmbedEnabled, value);
+                RaisePropertyChanged("IsDeEmbedEnabled");
+            }
+
+        }
 
         public string FreqString
         {
@@ -443,6 +500,42 @@ namespace CapacitanceExtractorApp.ViewModel
                 IsOutputListVisible = false;
                 IsOutputListVisible = true;
                 RaisePropertyChanged("OutputList");
+            }
+        }
+        public string LeftFixtureFilePath
+        {
+            get { return leftFixtureFilePath; }
+            set
+            {
+                Set(ref leftFixtureFilePath, value);
+                RaisePropertyChanged("LeftFixtureFilePath");
+                IsDeEmbedEnabled = (LeftFixtureFilePath != string.Empty &&
+                  RightFixtureFilePath != string.Empty &&
+                  DUTFilePath != string.Empty);
+            }
+        }
+        public string DUTFilePath
+        {
+            get { return dUTFilePath; }
+            set
+            {
+                Set(ref dUTFilePath, value);
+                RaisePropertyChanged("DUTFilePath");
+                IsDeEmbedEnabled = (LeftFixtureFilePath != string.Empty &&
+                  RightFixtureFilePath != string.Empty &&
+                  DUTFilePath != string.Empty);
+            }
+        }
+        public string RightFixtureFilePath
+        {
+            get { return rightFixtureFilePath; }
+            set
+            {
+                Set(ref rightFixtureFilePath, value);
+                RaisePropertyChanged("RightFixtureFilePath");
+                IsDeEmbedEnabled = (LeftFixtureFilePath != string.Empty &&
+                  RightFixtureFilePath != string.Empty &&
+                  DUTFilePath != string.Empty);
             }
         }
 
@@ -1710,6 +1803,9 @@ namespace CapacitanceExtractorApp.ViewModel
                     OutputImageSource = "pack://application:,,,/CapacitanceExtractorApp;component/Resources/blank.png";
                     outputListBackup.Clear();
                     outputListBackup = new List<string>();
+                    LeftFixtureFilePath = string.Empty;
+                    RightFixtureFilePath = string.Empty;
+                    DUTFilePath = string.Empty;
                 };
                 worker.RunWorkerCompleted += (o, ea) =>
                 {
@@ -1720,6 +1816,46 @@ namespace CapacitanceExtractorApp.ViewModel
                 worker.RunWorkerAsync();
             }
         }
+
+
+        #region De-Embed Tab Section Methods
+        private void onSelectDUTFixtureFileCommand()
+        {
+            var dialog = new System.Windows.Forms.OpenFileDialog();
+            dialog.Multiselect = false;
+            dialog.InitialDirectory = Environment.CurrentDirectory;
+            dialog.Filter = "S2P (*.s2p, *.S2P)|*.s2p;*.S2P";
+            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+            DUTFilePath = dialog.FileName;
+        }
+
+        private void onSelectRightFixtureFileCommand()
+        {
+            var dialog = new System.Windows.Forms.OpenFileDialog();
+            dialog.Multiselect = false;
+            dialog.InitialDirectory = Environment.CurrentDirectory;
+            dialog.Filter = "S2P (*.s2p, *.S2P)|*.s2p;*.S2P";
+            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+            RightFixtureFilePath = dialog.FileName;
+        }
+
+        private void onSelectLeftFixtureFileCommand()
+        {
+            var dialog = new System.Windows.Forms.OpenFileDialog();
+            dialog.Multiselect = false;
+            dialog.InitialDirectory = Environment.CurrentDirectory;
+            dialog.Filter = "S2P (*.s2p, *.S2P)|*.s2p;*.S2P";
+            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+            LeftFixtureFilePath = dialog.FileName;
+        }
+
+        private void startDeEmbed()
+        {
+            DeEmbedHelper helper = new DeEmbedHelper();
+            string temp = string.Empty;
+            helper.startDeEmbed(string.Empty, string.Empty, string.Empty, ref temp);
+        } 
+        #endregion
     }
 }
     
