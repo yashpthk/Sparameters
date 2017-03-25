@@ -13,8 +13,8 @@ namespace CapacitanceExtractorApp
         public void startDeEmbed(string leftPath, string rightPath, string DUTPath, ref string statusMessage)
         {
 #if DEBUG
-            leftPath = Environment.CurrentDirectory + @"\Data\RESONANT1.S2P";
-            rightPath = Environment.CurrentDirectory + @"\Data\RESONANT1.S2P";
+            leftPath = Environment.CurrentDirectory + @"\Data\PORTLINE.S2P";
+            rightPath = Environment.CurrentDirectory + @"\Data\PORTLINE.S2P";
             DUTPath = Environment.CurrentDirectory + @"\Data\ONEPF.S2P";
 #endif
             string[] leftFile = System.IO.File.ReadAllLines(leftPath);
@@ -22,7 +22,7 @@ namespace CapacitanceExtractorApp
             string[] DUTFile = System.IO.File.ReadAllLines(DUTPath);
 
             string[] deembededResult = new string[leftFile.Length];
-            deembededResult[0] = "!ILH Universität Stuttgart, De-embed utility";
+            deembededResult[0] = "!ILH, Universität Stuttgart, De-embed utility";
             deembededResult[1] = "!Date: " + DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy");
             deembededResult[2] = DUTFile[2];
             deembededResult[3] = DUTFile[3];
@@ -36,6 +36,7 @@ namespace CapacitanceExtractorApp
             {
                 for (int i = 0; i < leftFile.Length; i++)
                 {
+                    string freq = leftFile[i].Split('\t')[0];
                     //Get Left fixture S parameters and convert them to Inverse T parameters
                     Complex[,] leftTParams = getParameterMatrix(leftFile[i]);
                     leftTParams = stot(leftTParams);
@@ -57,8 +58,11 @@ namespace CapacitanceExtractorApp
                     //Convert T to S
                     DUTParams = ttos(DUTParams);
 
-                    deembededResult[i+5] = DUTParams[0, 0].ToString() + " ; " + DUTParams[0, 1].ToString() + " ; " +
-                        DUTParams[1, 0].ToString() + " ; " + DUTParams[1, 1].ToString();
+                    deembededResult[i + 5] = freq + " " +
+                        DUTParams[0, 0].Magnitude + " " + DUTParams[0, 0].Imaginary + " " +
+                        DUTParams[0, 1].Magnitude + " " + DUTParams[0, 1].Imaginary + " " +
+                        DUTParams[1, 0].Magnitude + " " + DUTParams[1, 0].Imaginary + " " +
+                        DUTParams[1, 1].Magnitude + " " + DUTParams[1, 1].Imaginary + " ";
                 }
 
                 using (StreamWriter sw = File.CreateText(Environment.CurrentDirectory + "result.s2p"))
@@ -126,9 +130,14 @@ namespace CapacitanceExtractorApp
             return det;
         }
 
-        private Complex[,] Multiply(Complex[,] MatrixA, Complex[,] MatrixB)
+        private Complex[,] Multiply(Complex[,] A, Complex[,] B)
         {
-            return null;
+            Complex[,] R = new Complex[2, 2];
+            R[0, 0] = (A[0, 0] * B[0, 0]) + (A[0, 1] * B[1, 0]); //T11*S11 + T12*S21
+            R[0, 1] = (A[0, 0] * B[0, 1]) + (A[0, 1] * B[1, 1]); //T11*S12 + T12*S22
+            R[1, 0] = (A[1, 0] * B[0, 0]) + (A[1, 1] * B[1, 0]); //T21*S11 + T22*S21
+            R[1, 1] = (A[1, 0] * B[0, 1]) + (A[1, 0] * B[1, 1]); //T21*S12 + T22*S22
+            return R;
         }
     }
 }

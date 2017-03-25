@@ -143,7 +143,7 @@ namespace CapacitanceExtractorApp.ViewModel
         DataSet ds = new DataSet();
         string dynamicFileName = String.Empty;
         string[] freqPoints = new string[10];
-        int numberOfMeasurementSets = 0;
+        //int numberOfMeasurementSets = 0;
         double[][] cValues_B1505 = null;
         int VdsMax = 60;
         private static object _lock = new object(); 
@@ -885,7 +885,7 @@ namespace CapacitanceExtractorApp.ViewModel
         /// <param name="filePath">The file path.</param>
         /// <param name="frequency">The frequency.</param>
         /// <param name="tbl">The table.</param>
-        private static void ConvertToDataTable(string filePath, Int64 frequency, DataTable tbl)
+        private void ConvertToDataTable(string filePath, Int64 frequency, DataTable tbl)
         {
             string[] lines = System.IO.File.ReadAllLines(filePath);
             lines = lines.Skip(5).ToArray();

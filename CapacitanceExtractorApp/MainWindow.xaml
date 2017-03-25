@@ -239,9 +239,9 @@
             		TextWrapping="Wrap" 
             		Width="320"/>
                                     <StackPanel Width="320">
-                                        <TextBlock Text="{Binding StatusMessages}" ScrollViewer.CanContentScroll="True" 
+                                        <TextBox Text="{Binding StatusMessages}" ScrollViewer.CanContentScroll="True" 
                                            ScrollViewer.VerticalScrollBarVisibility="Visible" TextWrapping="Wrap" 
-                                           Foreground="Red" Margin="0,5,10,0" Height="45" />
+                                           Foreground="Red" Margin="0,5,10,0" Height="45" IsReadOnly="True"/>
                                     </StackPanel>
                                 </StackPanel>
 
