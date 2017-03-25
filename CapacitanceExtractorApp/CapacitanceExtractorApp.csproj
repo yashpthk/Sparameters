@@ -125,6 +125,7 @@
     </ApplicationDefinition>
     <Compile Include="ConvertersAndHelpers\DeEmbedHelper.cs" />
     <Compile Include="ConvertersAndHelpers\ImageConverter .cs" />
+    <Compile Include="ConvertersAndHelpers\TextBoxBehaviour.cs" />
     <Compile Include="Design\DesignDataService.cs" />
     <Compile Include="Model\DataItem.cs" />
     <Compile Include="Model\DataService.cs" />
@@ -238,6 +239,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\De-embed.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <SplashScreen Include="Resources\SplashScreen.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.1.28.3\build\Fody.targets" Condition="Exists('..\packages\Fody.1.28.3\build\Fody.targets')" />

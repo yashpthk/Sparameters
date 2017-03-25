@@ -241,7 +241,7 @@
                                     <StackPanel Width="320">
                                         <TextBox Text="{Binding StatusMessages}" ScrollViewer.CanContentScroll="True" 
                                            ScrollViewer.VerticalScrollBarVisibility="Visible" TextWrapping="Wrap" 
-                                           Foreground="Red" Margin="0,5,10,0" Height="45" IsReadOnly="True"/>
+                                           Foreground="Red" Margin="0,5,10,0" Height="50" IsReadOnly="True" local:TextBoxBehaviour.ScrollOnTextChanged="True"/>
                                     </StackPanel>
                                 </StackPanel>
 
@@ -288,9 +288,9 @@
                                         <RowDefinition Height="60"></RowDefinition>
                                         <RowDefinition Height="60"></RowDefinition>
                                         <RowDefinition Height="60"></RowDefinition>
-                                        <RowDefinition Height="74*"/>
+                                        <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                    <xctk:MultiLineTextEditor Text="{Binding Notes}" Content="Notes" Grid.Row="0" Margin="5,10,5,0" Height="25" 
+                                    <xctk:MultiLineTextEditor Text="{Binding Notes}" Content="Notes" Grid.Row="0" Margin="5,25,5,0" Height="25" 
                                                       VerticalAlignment="Top" DropDownHeight="150" DropDownWidth="200">
                                     </xctk:MultiLineTextEditor>
                                     <Button Content="To Excel" Command="{Binding GenerateExcelCommand}" Grid.Row="1"
